@@ -1,0 +1,124 @@
+/* Base responsive styles */
+:root {
+  --container-padding-xs: 16px;
+  --container-padding-sm: 20px;
+  --container-padding-md: 24px;
+  --container-padding-lg: 32px;
+  --container-padding-xl: 40px;
+  --container-padding-2xl: 48px;
+  
+  --gap-xs: 16px;
+  --gap-sm: 20px;
+  --gap-md: 24px;
+  --gap-lg: 32px;
+  --gap-xl: 40px;
+  --gap-2xl: 48px;
+}
+
+/* Responsive container classes */
+.responsive-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  transition: padding 0.3s ease;
+}
+
+/* Screen size specific styles */
+.responsive-container[data-screen-size="xs"] {
+  padding: var(--container-padding-xs);
+  gap: var(--gap-xs);
+}
+
+.responsive-container[data-screen-size="sm"] {
+  padding: var(--container-padding-sm);
+  gap: var(--gap-sm);
+  max-width: 640px;
+}
+
+.responsive-container[data-screen-size="md"] {
+  padding: var(--container-padding-md);
+  gap: var(--gap-md);
+  max-width: 768px;
+}
+
+.responsive-container[data-screen-size="lg"] {
+  padding: var(--container-padding-lg);
+  gap: var(--gap-lg);
+  max-width: 1024px;
+}
+
+.responsive-container[data-screen-size="xl"] {
+  padding: var(--container-padding-xl);
+  gap: var(--gap-xl);
+  max-width: 1280px;
+}
+
+.responsive-container[data-screen-size="2xl"] {
+  padding: var(--container-padding-2xl);
+  gap: var(--gap-2xl);
+  max-width: 1536px;
+}
+
+/* Responsive grid system */
+.responsive-grid {
+  display: grid;
+  gap: inherit;
+  width: 100%;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1025px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+/* Responsive spacing utilities */
+.responsive-p {
+  padding: var(--container-padding-xs);
+}
+
+@media (min-width: 640px) {
+  .responsive-p {
+    padding: var(--container-padding-sm);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-p {
+    padding: var(--container-padding-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-p {
+    padding: var(--container-padding-lg);
+  }
+}
+
+/* Hide/Show utilities */
+.hide-on-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: block;
+  }
+  
+  .show-on-mobile {
+    display: none;
+  }
+}
