@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Plus,
@@ -32,13 +32,14 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import useUserDetials from "../hooks/useUserDetails";
 import SearchablePairSelector from "../components/SearchAbleDropdown";
-export type TakeProfitTarget = {
+import useSignalDetailsById from "../hooks/useSignalDetailsById";
+type TakeProfitTarget = {
   price: string;
   allocationType: "percentage";
   allocationValue: string;
 };
 
-export type StopLossTarget = {
+type StopLossTarget = {
   price: string;
   allocationType: "percentage";
   allocationValue: string;
@@ -52,7 +53,6 @@ const CreateSignalPage = () => {
   const [entryPrice, setEntryPrice] = useState("");
   const [stopPrice, setStopPrice] = useState("");
   const [loading, setLoading] = useState(false);
-  const [createSignalLoading, setCreateSignalLoading] = useState(false)
   const user = getDecodedUserToken();
   const [takeProfit, setTakeProfit] = useState<TakeProfitTarget[]>([
     { price: "", allocationType: "percentage", allocationValue: "100" },
@@ -61,7 +61,7 @@ const CreateSignalPage = () => {
     { price: "", allocationType: "percentage", allocationValue: "100" },
   ]);
   const [tradeAllocationType, setTradeAllocationType] = useState<"amount">("amount");
-  const [leverage, setLeverage] = useState<number>();
+  const [leverage, setLeverage] = useState('');
   const [tradeAllocationValue, setTradeAllocationValue] = useState("10"); // Default 10%
 
   const [description, setDescription] = useState("");
@@ -76,8 +76,12 @@ const CreateSignalPage = () => {
 
   const { signalPending } = useCreateSignal();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const signalId = searchParams.get('signalId') || undefined;
 
-  const { userDetails } = useUserDetials(user!.userId);
+  const { userDetails, userDetialsLoading } = useUserDetials(user!.userId);
+  const { signalDetailsResult, signalDetailsLoading } = useSignalDetailsById(user!.userId, signalId);
+  
   const getTradeDurationRange = (durationValue: string) => {
     const startDateTime = dayjs();
 
@@ -120,11 +124,8 @@ const CreateSignalPage = () => {
     field: keyof TakeProfitTarget,
     value: string
   ) => {
-    const numericValue = parseFloat(value);
-    const newValue = numericValue >= 0 ? value : '0';
-
     const newTakeProfit = [...takeProfit];
-    newTakeProfit[index] = { ...newTakeProfit[index], [field]: newValue };
+    newTakeProfit[index] = { ...newTakeProfit[index], [field]: value };
     setTakeProfit(newTakeProfit);
   };
 
@@ -144,14 +145,9 @@ const CreateSignalPage = () => {
     field: keyof StopLossTarget,
     value: string
   ) => {
-    const newValue = Math.max(0, parseFloat(value)).toString();
-
     const newStopLoss = [...stopLoss];
-    newStopLoss[index] = { ...newStopLoss[index], [field]: newValue };
+    newStopLoss[index] = { ...newStopLoss[index], [field]: value };
     setStopLoss(newStopLoss);
-    // const newStopLoss = [...stopLoss];
-    // newStopLoss[index] = { ...newStopLoss[index], [field]: value };
-    // setStopLoss(newStopLoss);
   };
 
   const isValidation = (
@@ -309,14 +305,14 @@ const CreateSignalPage = () => {
         allocationType: tradeAllocationType,
       },
     };
-    setCreateSignalLoading(true);
+
+    setLoading(true);
 
     createSignal(signalData)
       .then((response) => {
         if (response.status === 201) {
           message.success("Signal created successfully");
           queryClient.invalidateQueries({ queryKey: ["Dashboard"] });
-          navigate('/signals')
         } else if (response?.data.error) {
           message.error(response?.data.error);
         }
@@ -329,7 +325,7 @@ const CreateSignalPage = () => {
         message.error("Something went wrong", 2);
       })
       .finally(() => {
-        setCreateSignalLoading(false);
+        setLoading(false);
       });
 
     setSignalType("long");
@@ -358,7 +354,6 @@ const CreateSignalPage = () => {
     TON: "Toncoin",
     USDT: "Tether",
   };
-
   const fetchCoinsList = async () => {
     try {
       setLoading(true);
@@ -389,31 +384,10 @@ const CreateSignalPage = () => {
     entry: entryPrice ? parseFloat(entryPrice) : undefined,
   }), [takeProfit, stopLoss, entryPrice]);
 
-  // useEffect(()=>{
-  //   if (signalDetailsResult && signalId) {
-  //     const signalDetailsData = signalDetailsResult.data;
-  //     console.log('signalDetailsData.time ',signalDetailsData.timeframe)
-  //     if (signalDetailsData) {
-  //       setSelectedPair(signalDetailsData.pair);
-  //       setSignalType(signalDetailsData.type.toLowerCase() as "long" | "short");
-  //       setEntryPrice(signalDetailsData.entryPrice.toString());
-  //       setTakeProfit(signalDetailsData.takeProfitTargets || []);
-  //       setStopLoss(signalDetailsData.stopLossTargets || []);
-  //       setDescription(signalDetailsData.description || "");
-  //       setTimeframe(signalDetailsData.timeframe || '15m');
-  //       setSignalDuration(signalDetailsData.signalDuration || "1d");
-  //       setOrderType(signalDetailsData.orderType as ORDER_TYPE);
-  //       setIsPublic(signalDetailsData.isPublic);
-  //       setTradeAllocationType("amount");
-  //       setTradeAllocationValue(signalDetailsData?.tradeAllocation?.allocationValue || 100);
-  //       setLeverage(signalDetailsData?.leverage)
-  //     }
-  //   }
-  // },[signalDetailsResult, signalId])
   useEffect(() => {
     fetchCoinsList();
   }, []);
-  console.log('timeframes ', timeframe)
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
@@ -432,17 +406,17 @@ const CreateSignalPage = () => {
           <button
             onClick={handleSubmit}
             type="submit"
-            disabled={createSignalLoading}
+            disabled={signalPending}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             <Send className="w-4 h-4" />
-            {createSignalLoading ? (
+            {signalPending ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Creating Signal...
               </>
             ) : (
-              "Create Signal"
+              "Post Signal"
             )}
           </button>
 
@@ -627,48 +601,98 @@ const CreateSignalPage = () => {
           ))}
         </div>
       </div>
+
+       {/* Update by Wassel */}
       <div className="px-4 mb-4">
-        <label className="block text-sm text-slate-400 mb-2">Trade Allocation</label>
+        <label className="block text-sm text-slate-400 mb-2">
+          Trade Allocation
+          <span className="ml-2 font-medium text-sm text-white">
+            {tradeAllocationValue}
+            {tradeAllocationType === "percentage" ? "%" : "$"}
+          </span>
+        </label>
+        
         <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
+          <div className="relative flex-1 space-y-2">
+            {/* Slider with dynamic min/max based on allocation type */}
             <input
-              type="number"
+              type="range"
+              min={tradeAllocationType === "percentage" ? "0" : "10"}
+              max={tradeAllocationType === "percentage" ? "100" : "10000"}
               value={tradeAllocationValue}
               onChange={(e) => setTradeAllocationValue(e.target.value)}
-              placeholder={tradeAllocationType === "amount" ? "e.g. 10" : "e.g. 100"}
-              className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 pl-11 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50"
+              step={tradeAllocationType === "percentage" ? "1" : "10"}
+              className={`w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 
+                [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+                [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-pink-500 
+                [&::-webkit-slider-thumb]:to-purple-600 [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-pink-500/20
+                hover:[&::-webkit-slider-thumb]:scale-110 transition-all
+                ${tradeAllocationType === "amount" ? "" : ""}`}
             />
-            {tradeAllocationType === "amount" && (
-              <DollarSign className="w-5 h-5 text-slate-400 absolute left-4 top-3.5" />
-            )}
+            
+            
+            {/* Range labels */}
+            <div className="flex justify-between text-xs text-slate-400 px-1">
+              <span>
+                {tradeAllocationType === "percentage" ? "0%" : "$10"}
+              </span>
+              <span>
+                {tradeAllocationType === "percentage" ? "50%" : "$5,000"}
+              </span>
+              <span>
+                {tradeAllocationType === "percentage" ? "100%" : "$10,000"}
+              </span>
+            </div>
           </div>
-
+          
         </div>
       </div>
 
+      {/* Update by Wassel */}
       <div className="px-4 mb-4">
-        <label className="block text-sm text-slate-400 mb-2">Leverage</label>
+        <label className="block text-sm text-slate-400 mb-2">
+          Leverage <span className="font-medium text-sm text-white">{leverage}x</span>
+        </label>
+        
         <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <input
-              type="number"
-              value={leverage}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (parseInt(value) >= 0) {
-                  setLeverage(parseFloat(value));
-                } else {
-                  setLeverage(0);
-                }
-              }}
-              placeholder="Enter Leverage"
-              className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 pl-11 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/50"
-            />
-            <Percent className="w-4 h-4 text-slate-400 absolute left-3 top-4 group-hover:text-pink-500 transition-colors" />
+          <div className="relative flex-1 space-y-2 group">
+            {/* Range Slider */}
+            <div className="relative">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={Number(leverage)}  // Ensure value is a number
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value)) {
+                    setLeverage(value);  // Make sure setLeverage expects a number
+                  }
+                }}
+                className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer 
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 
+                  [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+                  [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-pink-500 
+                  [&::-webkit-slider-thumb]:to-purple-600 [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-pink-500/20
+                  hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
+              />
+            </div>
+            
+            {/* Range Labels */}
+            <div className="flex justify-between text-xs text-slate-400 px-1">
+              <span>0x</span>
+              <span>50x</span>
+              <span>100x</span>
+            </div>
           </div>
-
+          
         </div>
       </div>
+
+
       {/* Entry or Stop Price */}
       {orderType !== "MARKET" &&
 
@@ -687,15 +711,10 @@ const CreateSignalPage = () => {
                   ? stopPrice
                   : entryPrice
               }
-              // onChange={(e) =>
-              //   orderType === "STOP_LIMIT" || orderType === "STOP_MARKET"
-              //     ? setStopPrice(e.target.value)
-              //     : setEntryPrice(e.target.value)
-              // }
               onChange={(e) =>
                 orderType === "STOP_LIMIT" || orderType === "STOP_MARKET"
-                  ? setStopPrice(Math.max(0, parseFloat(e.target.value)).toString())
-                  : setEntryPrice(Math.max(0, parseFloat(e.target.value)).toString())
+                  ? setStopPrice(e.target.value)
+                  : setEntryPrice(e.target.value)
               }
               onFocus={() => setSelectedInput("entry")}
               placeholder={
@@ -867,6 +886,26 @@ const CreateSignalPage = () => {
           <CustomSwitch checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
       </div>
+
+        <div className="footerButton flex justify-center pb-4">
+          <button
+            onClick={handleSubmit}
+            type="submit"
+            disabled={signalPending}
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            {signalPending ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Creating Signal...
+              </>
+            ) : (
+              "Post Signal"
+            )}
+          </button>
+      </div>
+
     </div>
   );
 };

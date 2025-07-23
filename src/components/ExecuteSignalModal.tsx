@@ -311,19 +311,10 @@ const ExecuteSignalModal = ({ onClose, signalData }: ExecuteSignalModalProps) =>
 
 				{/* Content */}
 				<div className="p-3 sm:p-6 space-y-3 sm:space-y-6 overflow-y-auto max-h-[80vh]">
-					{/* Chart */}
-					<div className="bg-[#131722] rounded-xl border border-slate-700/50 overflow-hidden shadow-inner">
-						<div
-							ref={chartContainerRef}
-							className="w-full"
-							style={{
-								height: isMobile ? "180px" : isTablet ? "250px" : "300px",
-							}}
-						/>
-					</div>
 
+					
 					{/* Signal Info */}
-					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+					<div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
 						<div className="bg-slate-800/50 backdrop-blur-sm p-3 rounded-xl border border-slate-700/30">
 							<div className="flex items-center gap-2 mb-1">
 								<Target className="w-4 h-4 text-blue-500" />
@@ -364,6 +355,18 @@ const ExecuteSignalModal = ({ onClose, signalData }: ExecuteSignalModalProps) =>
 								{lossPercentage}% max loss
 							</div>
 						</div>
+					</div>
+
+
+					{/* Chart */}
+					<div className="bg-[#131722] rounded-xl border border-slate-700/50 overflow-hidden shadow-inner">
+						<div
+							ref={chartContainerRef}
+							className="w-full"
+							style={{
+								height: isMobile ? "180px" : isTablet ? "250px" : "300px",
+							}}
+						/>
 					</div>
 
 					{/* Signal Options */}
@@ -454,44 +457,63 @@ const ExecuteSignalModal = ({ onClose, signalData }: ExecuteSignalModalProps) =>
 					</div>
 
 					{/* Trade Amount & Leverage */}
+					{/* Update by Wassem */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
 						<div className="relative">
 							<label className="block text-xs text-slate-400 mb-1">
-								Trade Amount
+								Trade Amount <span className="valueRange font-medium text-sm text-white">{amount}$</span>
 							</label>
-							<div className="relative group">
+							<div className="relative group space-y-2">
+								<div className="relative flex items-center">
 								<input
-									type="text"
+									type="range"
+									min="10"
+									max="10000"
 									value={amount}
 									onChange={(e) => setAmount(e.target.value)}
-									className="w-full bg-slate-800/50 rounded-xl px-4 py-2 pl-9 text-white 
-                    placeholder:text-slate-500 border border-slate-700/50 focus:outline-none 
-                    focus:ring-2 focus:ring-pink-500/50 transition-all group-hover:border-pink-500/50"
-									placeholder="Enter amount"
+									step="10"
+									className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer pl-8
+									[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 
+									[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+									[&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-pink-500 
+									[&::-webkit-slider-thumb]:to-purple-600 [&::-webkit-slider-thumb]:cursor-pointer
+									[&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-pink-500/20
+									hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
 									disabled={isExecuting}
 								/>
-								<DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 group-hover:text-pink-500 transition-colors" />
+								</div>
 							</div>
 						</div>
 
 						<div className="relative">
 							<label className="block text-xs text-slate-400 mb-1">
-								Leverage
+								Leverage <span className="valueRange font-medium text-sm text-white">{leverage}x</span>
 							</label>
-							<div className="relative group">
+							<div className="relative group space-y-2">
 								<input
-									type="number"
-									value={leverage}
-									onChange={(e) => setLeverage(Number(e.target.value))}
-									className="w-full bg-slate-800/50 rounded-xl px-4 py-2 pl-9 text-white 
-                    placeholder:text-slate-500 border border-slate-700/50 focus:outline-none 
-                    focus:ring-2 focus:ring-pink-500/50 transition-all group-hover:border-pink-500/50"
-									placeholder="Enter leverage"
-									disabled={isExecuting}
+								type="range"
+								min="1"
+								max="100"
+								value={leverage}
+								onChange={(e) => setLeverage(Number(e.target.value))}
+								className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer 
+									[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 
+									[&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full 
+									[&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-pink-500 
+									[&::-webkit-slider-thumb]:to-purple-600 [&::-webkit-slider-thumb]:cursor-pointer
+									[&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-pink-500/20
+									hover:[&::-webkit-slider-thumb]:scale-110 transition-all"
+								disabled={isExecuting}
 								/>
-								<Percent className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 group-hover:text-pink-500 transition-colors" />
+								<div className="flex justify-between text-xs text-slate-400 px-1">
+								<span>1x</span>
+								<span>50x</span>
+								<span>100x</span>
+								</div>
 							</div>
 						</div>
+
 					</div>
 
 					{/* Error/Success Message */}
