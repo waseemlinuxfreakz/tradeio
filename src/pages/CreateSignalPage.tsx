@@ -579,12 +579,12 @@ const CreateSignalPage = () => {
       {/* Order Type */}
       <div className="px-4 mb-4">
         <label className="block text-sm text-slate-400 mb-2">Order Type</label>
-        <div className="space-y-2">
+        <div className="space-y-2 OrderTypes">
           {orderTypes.map((type) => (
             <div key={type.value} className="relative">
               <button
                 onClick={() => setOrderType(type.value as any)}
-                className={`w-full p-4 rounded-xl border flex items-center justify-between transition-colors ${orderType === type.value
+                className={`OrderTypeButton w-full flex items-center transition-colors ${orderType === type.value
                   ? "bg-pink-500/20 border-pink-500/50"
                   : "bg-slate-800/50 border-slate-700/50"
                   }`}

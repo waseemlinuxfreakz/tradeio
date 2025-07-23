@@ -80,7 +80,7 @@ section.section {
   margin-bottom: 0px;
 }
 
-.feature-card ul  ul {
+.feature-card ul ul {
   list-style: circle !important;
 }
 
@@ -95,9 +95,32 @@ section.section h3 {
 
 @media (max-width: 640px) {
   .quickNavigation button.p-4.rounded-xl.border {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  button.OrderTypeButton {
+    text-align: left;
+    background: transparent;
+    flex-direction: row-reverse;
+    gap: 10px !important;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+
+  button.OrderTypeButton svg {
+    flex-shrink: 0;
+  }
+
+  .space-y-2.OrderTypes {
+    gap: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  button.OrderTypeButton svg {
+    margin-top: 2px;
   }
 
   .activeTrade .sticky.top-0.z-50.bg-slate-900\/95.backdrop-blur-sm.border-b.border-slate-800 button {
