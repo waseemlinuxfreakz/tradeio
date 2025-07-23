@@ -31,6 +31,8 @@ import { getUserBadges } from "../lib/reputationSystem";
 import { getDecodedUserToken } from "../utils";
 import useRecentSignals from "../hooks/useRecentSignals";
 import useIntersectionObserver from "../hooks/useIntersectionObserver";
+import BadgesPanel from "../components/profile/BadgesPanel";
+
 
 const MyPersonalPage = () => {
 	const navigate = useNavigate();
@@ -294,8 +296,9 @@ const MyPersonalPage = () => {
 				</div>
 
 				{/* Achievements & Badges */}
-				<div className="px-4 mb-4">
+				{/* <div className="px-4 mb-4">
 					<div className="grid grid-cols-2 gap-3">
+
 						<button
 							onClick={() => navigate("/achievements")}
 							className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 flex items-center justify-between hover:bg-slate-800/70 transition-colors"
@@ -318,7 +321,7 @@ const MyPersonalPage = () => {
 							<ChevronRight className="w-5 h-5 text-slate-400" />
 						</button>
 					</div>
-				</div>
+				</div> */}
 
         <div className="tabContainer">
           <div className="tabBtns">
@@ -340,6 +343,14 @@ const MyPersonalPage = () => {
             >
               {/* <Trophy className=""/>  */}Achievements
             </button>
+            
+            <button
+              className={`tabButton flex items-center gap-2 py-2 px-4 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-slate-400 bg-pink-500 text-white bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 ${activeTab === 3 ? 'active bg-pink-500' : ''}`}
+              onClick={() => setActiveTab(3)}
+            >
+              {/* <Trophy className=""/>  */}Badges
+            </button>
+
           </div>
           
           <div className="tabContent">
@@ -537,6 +548,10 @@ const MyPersonalPage = () => {
                 </div>
               </div>
             </div> 
+            
+            <div className={`tabItem ${activeTab === 3 ? 'active' : ''}`}>
+              <BadgesPanel/>
+            </div>
 
           </div>
         </div>
