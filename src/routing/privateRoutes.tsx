@@ -13,6 +13,7 @@ const StakingPage = lazy(() => import("../pages/StakingPage"));
 const ReferralsPage = lazy(() => import("../pages/ReferralsPage"));
 const NotificationsPage = lazy(() => import("../pages/NotificationsPage"));
 const CreateSignalPage = lazy(() => import("../pages/CreateSignalPage"));
+const EditSignalPage = lazy(() => import("../pages/EditSignalPage"));
 const LeaderboardPage = lazy(() => import("../pages/LeaderboardPage"));
 const PortfolioDashboard = lazy(() => import("../pages/PortfolioDashboard"));
 const PortfolioTradesPage = lazy(() => import("../pages/PortfolioTradesPage"));
@@ -53,6 +54,7 @@ const PrivateRoutes = () => {
         <Route path="/referrals" element={<ReferralsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/create-signal" element={<CreateSignalPage />} />
+        <Route path="/edit-signal" element={<EditSignalPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/portfolio" element={<PortfolioDashboard />} />
         <Route path="/portfolio/trades" element={<PortfolioTradesPage />} />
