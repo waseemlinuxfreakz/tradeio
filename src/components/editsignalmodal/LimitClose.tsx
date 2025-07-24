@@ -8,7 +8,7 @@ interface LimitCloseProps {
 const LimitClose: React.FC<LimitCloseProps> = ({ onClose }) => {
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4 modalWrap">
       <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Close with Limit Order</h2>
@@ -107,7 +107,7 @@ const LimitClose: React.FC<LimitCloseProps> = ({ onClose }) => {
 
           {/* Submit Button */}
           <div className="flex justify-center">
-            <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50">
+            <button onClick={onClose} className="w-full justify-center px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 font-medium hover:opacity-90 transition-opacity flex items-center gap-2">
               Confirm
             </button>
           </div>

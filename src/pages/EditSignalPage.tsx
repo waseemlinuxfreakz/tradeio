@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react";
 import { CreateSignalPayload, ORDER_TYPE } from "../types/signal";
 import useCreateSignal from "../hooks/useCreateSignal";
 import { createSignal, getCoinsList } from "../apis/apiEndpoints";
+
 import { getDecodedUserToken } from "../utils";
 import { Spin } from "antd";
 import {
@@ -33,6 +34,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import useUserDetials from "../hooks/useUserDetails";
 import SearchablePairSelector from "../components/SearchAbleDropdown";
 import useSignalDetailsById from "../hooks/useSignalDetailsById";
+import LimitClose from "../components/editsignalmodal/LimitClose";
+import TPSLModal from "../components/editsignalmodal/TPSLModal";
+
 type TakeProfitTarget = {
   price: string;
   allocationType: "percentage";
@@ -391,6 +395,9 @@ const CreateSignalPage = () => {
   
   const [sliderValue, setSliderValue] = useState(50); // Initialize with default value 50%
 
+  const [showModal, setShowModal] = useState(false);
+  const [showTPSLModal, setShowTPSLModal] = useState(false);
+  
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
@@ -590,6 +597,23 @@ const CreateSignalPage = () => {
           ))}
         </div>
       </div>
+
+      
+      {/* Resize */}
+      <div className="px-4 mb-4">
+        <p className="block text-sm text-slate-400 mb-2">Size</p>
+        <div className="sizeChange">
+          <div className="sizeGroup">
+            <input type="radio" name="reduce_increase" id="reduce_size" />
+            <label htmlFor="reduce_size" className="text-slate-400">Reduce size</label>
+          </div>
+          <div className="sizeGroup">
+            <input type="radio" name="reduce_increase" id="increase_size" />
+            <label htmlFor="increase_size" className="text-slate-400">increase size</label>
+          </div>
+        </div>
+      </div>
+
 
        {/* Update by Wassel */}
       <div className="px-4 mb-4">
@@ -797,6 +821,7 @@ const CreateSignalPage = () => {
           </div>
         ))}
       </div>
+
       <div className="p-4 mb-4">
           <label htmlFor="Partialclose" className="block text-sm text-slate-400 ">
             Partial close
@@ -819,6 +844,36 @@ const CreateSignalPage = () => {
             <span>100%</span>
           </div>
       </div>
+
+            {/* Modal Buttons */}
+      <div className="px-4 mb-4 mt-4">
+        <label className="block text-sm text-slate-400 mb-2">Realized PNL(USDT)</label>
+        <div className="modalButtonsGroup flex gap-2 overflow-x-auto hide-scrollbar mb-4">
+
+      <button 
+        onClick={() => setShowTPSLModal(true)}
+        className="flex items-center gap-2 py-2 px-4 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
+      >
+        TP/SL
+      </button>
+      
+      {showTPSLModal && <TPSLModal onClose={() => setShowTPSLModal(false)} />}
+
+          <button  
+           onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 py-2 px-4 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-slate-800/50 text-slate-400 hover:bg-slate-700/50">
+            Limit close
+          </button>
+          {showModal && <LimitClose onClose={() => setShowModal(false)} />}
+
+          <button 
+          className="flex items-center gap-2 py-2 px-4 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-slate-800/50 text-slate-400 hover:bg-slate-700/50">
+            Market close
+          </button>
+
+        </div>
+      </div>
+
 
       <div className="footerButton flex justify-center pb-4">
         <button

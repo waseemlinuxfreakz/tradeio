@@ -109,6 +109,23 @@ section.section h3 {
   max-width: 450px;
 }
 
+.labelmt-0 {
+  margin-top: 0 !important; 
+}
+
+.tabContainer.modalTabContent .tabBtns {
+    padding: 0 0 20px 0;
+}
+
+.modalWrap {
+  overflow: auto;
+  padding-top: 30px !important;
+  padding-bottom: 30px !important;
+}
+
+.modalWrap> div {
+    margin: 0 auto;
+}
 
 @media (max-width: 640px) {
   .quickNavigation button.p-4.rounded-xl.border {
