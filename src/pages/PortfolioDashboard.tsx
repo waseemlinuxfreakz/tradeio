@@ -2,29 +2,15 @@ import React from "react";
 import {
   TrendingUp,
   TrendingDown,
-  ArrowRight,
-  Award,
+
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+
 import { useNavigate } from "react-router-dom";
 import PageTransition from "../components/PageTransition";
 import NavigationBar from "../components/NavigationBar";
 import ReputationPointsInfo from "../components/profile/ReputationPointsInfo";
-import { getUserAchievements } from "../lib/reputationSystem";
-import { getDecodedUserToken } from "../utils";
+import { getDecodedUserToken, StatsFormatValues } from "../utils";
 import usePortfolioDashboard from "../hooks/usePortfolioDashboard";
-import useLatestTrades from "../hooks/useLatestTrades";
 import PortfolioTradesPage from "./PortfolioTradesPage";
 
 
@@ -36,12 +22,8 @@ const PortfolioDashboard = () => {
     portfolioOverviewData,
     portfolioOverviewLoading,
     portfolioOverviewError,
-  } = usePortfolioDashboard(user!.userId);
-  const { latestTradesData, latestTradesLoading, latestTradesError } =
-    useLatestTrades(user!.userId);
-  const achievements = getUserAchievements()
-    .filter((a) => a.completed)
-    .slice(0, 3);
+  } = usePortfolioDashboard(user!.userId, timeRange);
+
   const portfolioStats = {
     totalValue: portfolioOverviewData?.data?.portfolioStats?.totalValue || 0,
     todayChange:
@@ -53,25 +35,8 @@ const PortfolioDashboard = () => {
       portfolioOverviewData?.data?.portfolioStats?.totalProfitPercent || 0,
   };
 
-  const performanceData = portfolioOverviewData?.data?.performanceData || 0;
-
-  const portfolioDistribution = portfolioOverviewData?.data?.distribution || 0;
-
   const recentTransactions =
     portfolioOverviewData?.data?.recentTransactions || 0;
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-3 border border-pink-500/20">
-          <p className="text-slate-400 text-xs">Portfolio Value</p>
-          <p className="text-white font-bold text-base">
-            ${payload[0].value.toLocaleString()}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <PageTransition>
@@ -91,14 +56,13 @@ const PortfolioDashboard = () => {
             <div className="text-sm text-slate-400">Total Portfolio Value</div>
             <div className="flex items-baseline gap-3 mt-1">
               <div className="text-3xl font-bold">
-                ${portfolioStats.totalValue.toLocaleString()}
+                ${StatsFormatValues(Number(portfolioStats.totalValue))}
               </div>
               <div
-                className={`flex items-center ${
-                  portfolioStats.todayChange >= 0
+                className={`flex items-center ${portfolioStats.todayChange >= 0
                     ? "text-emerald-500"
                     : "text-rose-500"
-                }`}
+                  }`}
               >
                 {portfolioStats.todayChange >= 0 ? (
                   <TrendingUp className="w-4 h-4 mr-1" />
@@ -106,7 +70,7 @@ const PortfolioDashboard = () => {
                   <TrendingDown className="w-4 h-4 mr-1" />
                 )}
                 <span className="text-sm font-medium">
-                  {portfolioStats.todayChangePercent}%
+                  {StatsFormatValues(Number(portfolioStats.todayChange))}%
                 </span>
               </div>
             </div>
@@ -170,9 +134,9 @@ const PortfolioDashboard = () => {
         )} */}
 
         {/* Active Trades */}
-        
+
         <div className="activeTrade">
-            <PortfolioTradesPage/>
+          <PortfolioTradesPage />
         </div>
 
         {/* <div className="p-4">
@@ -377,11 +341,10 @@ const PortfolioDashboard = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`p-2 rounded-full ${
-                              transaction.type === "Buy"
+                            className={`p-2 rounded-full ${transaction.type === "Buy"
                                 ? "bg-emerald-500/10"
                                 : "bg-rose-500/10"
-                            }`}
+                              }`}
                           >
                             {transaction.outcome === "profit" ? (
                               <TrendingUp className="w-5 h-5 text-emerald-500" />
@@ -399,7 +362,7 @@ const PortfolioDashboard = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{transaction.value}</div>
+                          <div className="font-medium">{StatsFormatValues(transaction.value)}</div>
                           <div className="text-sm text-slate-400">
                             {transaction.time}
                           </div>

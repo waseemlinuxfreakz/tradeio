@@ -1,26 +1,32 @@
-import {useState} from "react";
-import {useNavigate} from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	ArrowLeft,
 	TrendingUp,
 	TrendingDown,
 	Search,
 	Clock,
-	AlertCircle,
-	Pencil
+	AlertCircle
 } from "lucide-react";
-import ActiveTradeCard from "../components/portfolio/ActiveTradeCard";
 import NavigationBar from "../components/NavigationBar";
 import PageTransition from "../components/PageTransition";
-import {getDecodedUserToken} from "../utils";
+import { getDecodedUserToken, StatsFormatValues } from "../utils";
 import usePortfolioStats from "../hooks/usePortfolioStats";
 import useIntersectionObserver from "../hooks/useIntersectionObserver";
-
+import { TRADE_TYPE } from "../lib/tradingLogic";
+import ActiveTradeCard from "../components/portfolio/ActiveTradeCard";
+export interface TradeCoins {
+	price: number
+	name: string
+}
 const PortfolioTradesPage = () => {
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState<"active" | "completed" | "failed">(
 		"active"
 	);
+	const [tradeCoins, setTradeCoins] = useState<TradeCoins[]>([]);
+	const [tradeCoinsPrice, setTradeCoinsPrice] = useState<TradeCoins[]>([]);
+	const socketRef = useRef<WebSocket | null>(null);
 	// const {trades, activeTrades, completedTrades, failedTrades} = useTradeStore();
 
 	const user = getDecodedUserToken();
@@ -36,14 +42,122 @@ const PortfolioTradesPage = () => {
 		isFetchingNextPage,
 	} = usePortfolioStats(user!.userId, activeTab);
 	const [searchQuery, setSearchQuery] = useState("");
+
+
+	const coinsRef = useRef<any[]>([]); // Keeps the latest coin list for reference
+
+
+
 	const loadMoreRef = useIntersectionObserver(
 		([entry], observer) => {
 			if (entry.isIntersecting && hasNextPage && !isFetchingNextPage && user) {
 				fetchNextPage();
 			}
 		},
-		{threshold: 0.1}
+		{ threshold: 0.1 }
 	);
+
+	const getVisibleTrades = () => {
+		const allTrades = porfolioFlatData?.flatMap((page) => page?.trades);
+
+		return allTrades?.filter((trade) => {
+			const matchesTab =
+				(activeTab === "active" &&
+					(trade.status === TRADE_TYPE.PENDING)) ||
+				(activeTab === "completed" && trade.status === TRADE_TYPE.COMPLETED) ||
+				(activeTab === "failed" && trade.status === TRADE_TYPE.FAILED);
+
+			const matchesSearch = trade.details?.pair
+				.toLowerCase()
+				.includes(searchQuery.toLowerCase());
+
+			return matchesTab && matchesSearch;
+		});
+	};
+
+
+	const calculateStats = () => {
+		if (portfolioStats && 'data' in portfolioStats) {
+			return {
+				totalValue: portfolioStats.data.totalValue || 0,
+				totalProfit: portfolioStats.data.totalProfit || 0,
+				totalLoss: portfolioStats.data.totalLoss || 0,
+				netPnL: portfolioStats.data.netPnL || 0,
+			};
+		}
+
+		return {
+			totalValue: 0,
+			totalProfit: 0,
+			totalLoss: 0,
+			netPnL: 0,
+		};
+	};
+
+
+	const stats = calculateStats();
+
+
+	const visibleTrades = getVisibleTrades();
+
+	useEffect(() => {
+		coinsRef.current = tradeCoins;
+	}, [tradeCoins]);
+
+	useEffect(() => {
+		if (tradeCoins.length === 0) return;
+
+		if (socketRef.current) {
+			socketRef.current.close();
+		}
+
+		const streamNames = tradeCoins.map(coin => `${coin.name.toLowerCase()}@ticker`);
+		const streamUrl = `wss://stream.binance.com:9443/stream?streams=${streamNames.join("/")}`;
+		socketRef.current = new WebSocket(streamUrl);
+
+		socketRef.current.onmessage = (event) => {
+			const msg = JSON.parse(event.data);
+			const symbol = msg?.data?.s?.toLowerCase();
+			const price = parseFloat(msg?.data?.c);
+
+			if (!symbol || !price) return;
+
+			setTradeCoinsPrice(prev => {
+				const exists = prev.some(coin => coin.name.toLowerCase() === symbol);
+				if (exists) {
+					return prev.map(coin =>
+						coin.name.toLowerCase() === symbol
+							? { ...coin, price }
+							: coin
+					);
+				} else {
+					return [...prev, { name: symbol, price }];
+				}
+			});
+		};
+
+		return () => {
+			socketRef.current?.close();
+		};
+	}, [tradeCoins]);
+
+	useEffect(() => {
+		if (visibleTrades.length === 0) return;
+
+		const pairs = visibleTrades
+			.map(trade => trade.details?.pair)
+			.filter((pair): pair is string => !!pair);
+
+		pairs.forEach(pair => {
+			setTradeCoins(prev => {
+				const exists = prev.some(coin => coin.name === pair);
+				if (!exists) {
+					return [...prev, { name: pair, price: 0 }];
+				}
+				return prev;
+			});
+		});
+	}, [visibleTrades]);
 	if (isLoadingPortfolioStats) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -63,37 +177,6 @@ const PortfolioTradesPage = () => {
 			</div>
 		);
 	}
-
-	const getVisibleTrades = () => {
-		const allTrades = porfolioFlatData?.flatMap((page) => page?.trades);
-
-		return allTrades?.filter((trade) => {
-			const matchesTab =
-				(activeTab === "active" &&
-					(trade.status === "active" || trade.status === "pending")) ||
-				(activeTab === "completed" && trade.status === "completed") ||
-				(activeTab === "failed" && trade.status === "failed");
-
-			const matchesSearch = trade.details?.pair
-				.toLowerCase()
-				.includes(searchQuery.toLowerCase());
-
-			return matchesTab && matchesSearch;
-		});
-	};
-
-	const visibleTrades = getVisibleTrades();
-
-	const calculateStats = () => {
-		return {
-			totalValue: portfolioStats?.data?.totalValue||0,
-			totalProfit: portfolioStats?.data?.totalProfit||0,
-			totalLoss: portfolioStats?.data?.totalLoss||0,
-			netPnL: portfolioStats?.data?.netPnL||0,
-		};
-	};
-
-	const stats = calculateStats();
 
 	return (
 		<PageTransition>
@@ -117,19 +200,18 @@ const PortfolioTradesPage = () => {
 						<div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
 							<div className="text-sm text-slate-400 mb-1">Total Value</div>
 							<div className="text-xl font-bold">
-								${stats?.totalValue?.toFixed(2)}
+								${StatsFormatValues(stats?.totalValue)}
 							</div>
 						</div>
 
 						<div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50">
 							<div className="text-sm text-slate-400 mb-1">Net P&L</div>
 							<div
-								className={`text-xl font-bold ${
-									stats.netPnL >= 0 ? "text-emerald-500" : "text-rose-500"
-								}`}
+								className={`text-xl font-bold ${stats.netPnL >= 0 ? "text-emerald-500" : "text-rose-500"
+									}`}
 							>
 								{stats.netPnL >= 0 ? "+" : ""}
-								{stats.netPnL.toFixed(2)} USD
+								{StatsFormatValues(stats.netPnL)} USD
 							</div>
 						</div>
 					</div>
@@ -141,7 +223,7 @@ const PortfolioTradesPage = () => {
 								<span className="text-sm text-slate-400">Total Profit</span>
 							</div>
 							<div className="text-lg font-bold text-emerald-500">
-								+{stats.totalProfit.toFixed(2)} USD
+								+{StatsFormatValues(stats.totalProfit)} USD
 							</div>
 						</div>
 
@@ -151,7 +233,7 @@ const PortfolioTradesPage = () => {
 								<span className="text-sm text-slate-400">Total Loss</span>
 							</div>
 							<div className="text-lg font-bold text-rose-500">
-								{stats.totalLoss.toFixed(2)} USD
+								{StatsFormatValues(stats.totalLoss)} USD
 							</div>
 						</div>
 					</div>
@@ -174,11 +256,10 @@ const PortfolioTradesPage = () => {
 					<div className="flex gap-2 mb-4 overflow-x-auto hide-scrollbar">
 						<button
 							onClick={() => setActiveTab("active")}
-							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-								activeTab === "active"
-									? "bg-pink-500 text-white"
-									: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
-							}`}
+							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "active"
+								? "bg-pink-500 text-white"
+								: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
+								}`}
 						>
 							<Clock className="w-4 h-4" />
 							Active ({portfolioStats.data.activeTrades})
@@ -186,11 +267,10 @@ const PortfolioTradesPage = () => {
 
 						<button
 							onClick={() => setActiveTab("completed")}
-							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-								activeTab === "completed"
-									? "bg-emerald-500 text-white"
-									: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
-							}`}
+							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "completed"
+								? "bg-emerald-500 text-white"
+								: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
+								}`}
 						>
 							<TrendingUp className="w-4 h-4" />
 							Completed ({portfolioStats.data.completedTrades})
@@ -198,11 +278,10 @@ const PortfolioTradesPage = () => {
 
 						<button
 							onClick={() => setActiveTab("failed")}
-							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-								activeTab === "failed"
-									? "bg-rose-500 text-white"
-									: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
-							}`}
+							className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "failed"
+								? "bg-rose-500 text-white"
+								: "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50"
+								}`}
 						>
 							<AlertCircle className="w-4 h-4" />
 							Failed ({portfolioStats.data.rejectedTrades})
@@ -221,11 +300,8 @@ const PortfolioTradesPage = () => {
 							<ActiveTradeCard
 								key={trade.tradeId}
 								trade={trade}
-								onClick={() => {
-									// if (trade.tradeId) {
-									// 	navigate(`/trade/${trade.tradeId}`);
-									// }
-								}}
+								activeTab={activeTab}
+								tradeCoinsPrice={tradeCoinsPrice}
 							/>
 						))
 					) : (
@@ -244,8 +320,8 @@ const PortfolioTradesPage = () => {
 								{activeTab === "active"
 									? "You don't have any active trades. Execute a signal to start trading."
 									: activeTab === "completed"
-									? "You don't have any completed trades yet."
-									: "You don't have any failed trades yet."}
+										? "You don't have any completed trades yet."
+										: "You don't have any failed trades yet."}
 							</p>
 						</div>
 					)}
